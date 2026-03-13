@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bracket Brain — March Madness Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060a12;--bg2:#0d1320;--bg3:#131c2e;--card:#111827;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,165,0,0.3);
+  --orange:#ff9500;--orange2:#ffb340;--orange-dim:rgba(255,149,0,0.1);
+  --blue:#4da6ff;--blue-dim:rgba(77,166,255,0.1);
+  --green:#34d399;--red:#f87171;--purple:#a78bfa;
+  --text:#f0f4ff;--text2:#8899bb;--text3:#4a5568;
+  --display:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+  --r:8px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;min-height:100vh;overflow-x:hidden}
+
+/* Grain overlay */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:0.4;
+}
+
+/* Court lines bg */
+.court-bg{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255,149,0,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 50% 0%, rgba(77,166,255,0.03) 0%, transparent 70%);
+}
+
+.wrap{max-width:1000px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
+
+/* ── HEADER ── */
+.site-header{padding:40px 0 32px;text-align:center}
+.logo{
+  font-family:var(--display);font-size:64px;font-weight:800;
+  letter-spacing:-1px;line-height:1;
+  background:linear-gradient(135deg,#ff9500,#ffcc00,#ff6b35);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.logo span{
+  background:linear-gradient(135deg,#4da6ff,#a78bfa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.tagline{font-size:14px;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;margin-top:8px}
+
+/* ── NAV TABS ── */
+.tabs{
+  display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:4px;margin-bottom:28px;
+}
+.tab{
+  flex:1;padding:10px 8px;text-align:center;border:none;background:transparent;
+  color:var(--text2);font-family:var(--display);font-size:15px;font-weight:600;
+  letter-spacing:0.05em;text-transform:uppercase;border-radius:9px;
+  cursor:pointer;transition:all 0.2s;
+}
+.tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,0.04)}
+.tab.active{background:var(--orange-dim);color:var(--orange);border:1px solid var(--border2)}
+
+/* ── PANELS ── */
+.panel{display:none}
+.panel.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-title{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+
+/* ── PREDICT TAB ── */
+.matchup-layout{display:grid;grid-template-columns:1fr 48px 1fr;gap:16px;align-items:start;margin-bottom:20px}
+.vs-circle{
+  display:flex;align-items:center;justify-content:center;
+  width:48px;height:48px;border-radius:50%;margin-top:36px;
+  background:var(--bg3);border:1px solid var(--border);
+  font-family:var(--display);font-size:13px;font-weight:700;color:var(--text3)
+}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.field input{
+  width:100%;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--text);font-family:var(--body);font-size:14px;
+  outline:none;transition:border-color 0.15s;
+}
+.field input:focus{border-color:var(--orange)}
+.field input::placeholder{color:var(--text3)}
+
+.predict-btn{
+  width:100%;padding:14px;background:linear-gradient(135deg,#e67e00,#ff9500);
+  border:none;border-radius:var(--r);color:#000;font-family:var(--display);
+  font-size:17px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  cursor:pointer;transition:opacity 0.15s;
+}
+.predict-btn:hover{opacity:0.9}
+.predict-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* Result */
+.result-box{
+  background:var(--bg3);border:1px solid rgba(255,149,0,0.2);
+  border-radius:12px;padding:24px;margin-top:20px;display:none;
+}
+.result-box.show{display:block;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.winner-line{
+  font-family:var(--display);font-size:32px;font-weight:800;letter-spacing:-0.5px;
+  margin-bottom:16px;
+}
+.winner-line .name{color:var(--orange)}
+.conf-pill{
+  display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.1em;
+  text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-left:10px;
+  vertical-align:middle;font-family:var(--display);
+}
+.HIGH{background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3)}
+.MODERATE{background:rgba(255,149,0,0.12);color:var(--orange);border:1px solid rgba(255,149,0,0.3)}
+.TOSS-UP{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.3)}
+
+.prob-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.prob-name{width:160px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prob-bar-bg{flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+.prob-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--orange),var(--orange2));transition:width 0.6s cubic-bezier(0.4,0,0.2,1)}
+.prob-pct{width:44px;text-align:right;font-size:13px;font-weight:600;font-family:'Barlow Condensed',sans-serif}
+
+.factors{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.factor-item{background:var(--bg2);border-radius:var(--r);padding:10px 12px;border:1px solid var(--border)}
+.fi-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px}
+.fi-val{font-size:13px;font-weight:600}
+.fi-adv{font-size:10px;margin-top:2px}
+.adv-a{color:var(--orange)}.adv-b{color:var(--blue)}.adv-tie{color:var(--text3)}
+
+.upset-banner{
+  margin-top:14px;padding:10px 14px;
+  background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);
+  border-radius:var(--r);font-size:13px;color:var(--purple);display:none;
+}
+.upset-banner.show{display:block}
+
+/* ── SIMULATE TAB ── */
+.sim-controls{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.sim-btn{
+  padding:10px 22px;background:var(--orange-dim);border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--orange);font-family:var(--display);
+  font-size:14px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  cursor:pointer;transition:all 0.15s;
+}
+.sim-btn:hover{background:rgba(255,149,0,0.18)}
+.ctrl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)}
+.ctrl select{
+  padding:7px 10px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--text);font-size:13px;outline:none;
+}
+
+.round-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.round-tab{
+  padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;
+  font-family:var(--display);letter-spacing:0.05em;text-transform:uppercase;
+  border:1px solid var(--border);background:transparent;color:var(--text2);
+  cursor:pointer;transition:all 0.15s;
+}
+.round-tab.active{background:var(--orange-dim);color:var(--orange);border-color:var(--border2)}
+
+.round-panel{display:none}
+.round-panel.active{display:block}
+
+.game-row{
+  display:grid;grid-template-columns:1fr 32px 1fr;
+  gap:8px;align-items:center;margin-bottom:8px;
+}
+.game-team{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--r);padding:10px 12px;transition:all 0.15s;
+}
+.game-team.winner{border-color:var(--green);background:rgba(52,211,153,0.06)}
+.game-team.loser{opacity:0.4}
+.seed-num{
+  font-family:var(--display);font-size:11px;font-weight:700;
+  min-width:22px;text-align:center;padding:2px 5px;
+  background:var(--bg2);border-radius:4px;color:var(--text2)
+}
+.team-nm{font-size:13px;font-weight:600;flex:1}
+.team-pct{font-size:11px;color:var(--text3);font-family:'Barlow Condensed',sans-serif}
+.game-vs{text-align:center;font-size:10px;color:var(--text3);font-family:var(--display)}
+
+.champ-banner{
+  text-align:center;padding:28px;margin-bottom:20px;
+  background:linear-gradient(135deg,rgba(255,149,0,0.08),rgba(255,204,0,0.05));
+  border:1px solid rgba(255,149,0,0.25);border-radius:12px;
+}
+.champ-label{font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:var(--text3);font-family:var(--display);font-weight:700}
+.champ-name{font-family:var(--display);font-size:42px;font-weight:800;color:var(--orange);margin-top:4px;letter-spacing:-0.5px}
+
+/* ── MONTE CARLO TAB ── */
+.mc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.mc-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.mc-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-family:var(--display);font-weight:700;margin-bottom:5px}
+.mc-stat-val{font-size:22px;font-weight:700;font-family:var(--display)}
+.mc-stat-sub{font-size:11px;color:var(--text2);margin-top:2px}
+
+.mc-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.mc-thead{
+  display:grid;gap:6px;padding:10px 16px;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);
+  font-family:var(--display);font-weight:700;
+}
+.mc-row{
+  display:grid;gap:6px;padding:9px 16px;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  align-items:center;cursor:pointer;transition:background 0.1s;
+}
+.mc-row:last-child{border-bottom:none}
+.mc-row:hover{background:rgba(255,255,255,0.02)}
+.mc-row.top-pick{border-left:2px solid var(--orange)}
+
+.mc-pct-cell{display:flex;align-items:center;gap:5px}
+.mc-bar{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.mc-bar-fill{height:100%;border-radius:2px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1)}
+.pct-txt{font-size:11px;font-family:'Barlow Condensed',sans-serif;min-width:36px;text-align:right}
+.pct-high{color:var(--green)}.pct-med{color:var(--orange)}.pct-low{color:var(--text3)}
+
+.upset-section{margin-top:20px}
+.upset-title{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.upset-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.upset-card{
+  background:var(--card);border:1px solid rgba(167,139,250,0.2);
+  border-radius:var(--r);padding:12px 14px;
+}
+.uc-name{font-size:14px;font-weight:600;margin-bottom:3px}
+.uc-meta{font-size:11px;color:var(--text2)}
+.uc-badge{
+  display:inline-block;font-size:9px;font-weight:700;font-family:var(--display);
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:2px 7px;border-radius:10px;margin-left:6px;
+  background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)
+}
+
+/* Loading spinner */
+.spinner{
+  display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(255,149,0,0.3);border-top-color:var(--orange);
+  border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{color:var(--text2);font-size:13px;text-align:center;padding:24px;display:none}
+.loading-msg.show{display:block}
+
+/* Error */
+.error-msg{
+  background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);
+  border-radius:var(--r);padding:10px 14px;color:var(--red);font-size:13px;
+  margin-top:12px;display:none;
+}
+.error-msg.show{display:block}
+
+@media(max-width:600px){
+  .logo{font-size:44px}
+  .matchup-layout{grid-template-columns:1fr}
+  .vs-circle{display:none}
+  .factors{grid-template-columns:1fr}
+  .mc-stats{grid-template-columns:1fr 1fr}
+  .upset-cards{grid-template-columns:1fr}
+  .mc-thead,.mc-row{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div class="court-bg"></div>
+<div class="wrap">
+
+  <header class="site-header">
+    <div class="logo">BRACKET<span>BRAIN</span></div>
+    <div class="tagline">March Madness Predictor · KenPom-Style Algorithm</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('predict')">Predict</button>
+    <button class="tab" onclick="switchTab('simulate')">Simulate</button>
+    <button class="tab" onclick="switchTab('mc')">Monte Carlo</button>
+  </div>
+
+  <!-- ── PREDICT ── -->
+  <div id="panel-predict" class="panel active">
+    <div class="matchup-layout">
+      <div class="card">
+        <div class="card-title">Team A</div>
+        <div class="field"><label>Team Name</label><input id="a-name" value="Duke" placeholder="e.g. Duke"></div>
+        <div class="field"><label>Seed (1–16)</label><input id="a-seed" type="number" value="2" min="1" max="16"></div>
+        <div class="field"><label>AdjO</label><input id="a-adjo" type="number" value="119.2" step="0.1"></div>
+        <div class="field"><label>AdjD</label><input id="a-adjd" type="number" value="96.1" step="0.1"></div>
+        <div class="field"><label>Win %</label><input id="a-win" type="number" value="82.4" step="0.1"></div>
+        <div class="field"><label>SOS Rank</label><input id="a-sos" type="number" value="38"></div>
+        <div class="field"><label>Last 10 Wins</label><input id="a-form" type="number" value="7" min="0" max="10"></div>
+      </div>
+      <div class="vs-circle">VS</div>
+      <div class="card">
+        <div class="card-title">Team B</div>
+        <div class="field"><label>Team Name</label><input id="b-name" value="Tennessee" placeholder="e.g. Kentucky"></div>
+        <div class="field"><label>Seed (1–16)</label><input id="b-seed" type="number" value="5" min="1" max="16"></div>
+        <div class="field"><label>AdjO</label><input id="b-adjo" type="number" value="116.8" step="0.1"></div>
+        <div class="field"><label>AdjD</label><input id="b-adjd" type="number" value="93.4" step="0.1"></div>
+        <div class="field"><label>Win %</label><input id="b-win" type="number" value="74.1" step="0.1"></div>
+        <div class="field"><label>SOS Rank</label><input id="b-sos" type="number" value="22"></div>
+        <div class="field"><label>Last 10 Wins</label><input id="b-form" type="number" value="6" min="0" max="10"></div>
+      </div>
+    </div>
+    <button class="predict-btn" id="predict-btn" onclick="runPredict()">Run Prediction</button>
+    <div class="error-msg" id="predict-error"></div>
+    <div class="result-box" id="result-box">
+      <div class="winner-line" id="winner-line"></div>
+      <div class="prob-row">
+        <div class="prob-name" id="prob-name-a"></div>
+        <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-bar-a" style="width:0%"></div></div>
+        <div class="prob-pct" id="prob-pct-a"></div>
+      </div>
+      <div class="prob-row">
+        <div class="prob-name" id="prob-name-b"></div>
+        <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-bar-b" style="width:0%;background:linear-gradient(90deg,var(--blue),#7eb8ff)"></div></div>
+        <div class="prob-pct" id="prob-pct-b"></div>
+      </div>
+      <div class="factors" id="factors"></div>
+      <div class="upset-banner" id="upset-banner"></div>
+    </div>
+  </div>
+
+  <!-- ── SIMULATE ── -->
+  <div id="panel-simulate" class="panel">
+    <div class="sim-controls">
+      <button class="sim-btn" id="sim-btn" onclick="runSimulate()">⚡ Simulate Bracket</button>
+      <div class="ctrl">
+        <span>Upset factor</span>
+        <select id="sim-noise">
+          <option value="0">None</option>
+          <option value="0.08" selected>Low</option>
+          <option value="0.15">Medium</option>
+          <option value="0.25">High</option>
+        </select>
+      </div>
+    </div>
+    <div class="loading-msg" id="sim-loading"><span class="spinner"></span>Simulating bracket...</div>
+    <div class="error-msg" id="sim-error"></div>
+    <div id="sim-results" style="display:none">
+      <div class="champ-banner">
+        <div class="champ-label">🏆 Champion</div>
+        <div class="champ-name" id="sim-champ"></div>
+      </div>
+      <div class="round-tabs" id="round-tabs"></div>
+      <div id="round-panels"></div>
+    </div>
+  </div>
+
+  <!-- ── MONTE CARLO ── -->
+  <div id="panel-mc" class="panel">
+    <div class="sim-controls">
+      <button class="sim-btn" id="mc-btn" onclick="runMC()">▶ Run Monte Carlo</button>
+      <div class="ctrl">
+        <span>Simulations</span>
+        <select id="mc-sims">
+          <option value="1000">1,000</option>
+          <option value="5000" selected>5,000</option>
+          <option value="10000">10,000</option>
+          <option value="25000">25,000</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <span>Upset factor</span>
+        <select id="mc-noise">
+          <option value="0">None</option>
+          <option value="0.08" selected>Low</option>
+          <option value="0.15">Medium</option>
+          <option value="0.25">High</option>
+        </select>
+      </div>
+    </div>
+    <div class="loading-msg" id="mc-loading"><span class="spinner"></span>Running simulations...</div>
+    <div class="error-msg" id="mc-error"></div>
+    <div id="mc-results" style="display:none">
+      <div class="mc-stats">
+        <div class="mc-stat">
+          <div class="mc-stat-label">Top Champion</div>
+          <div class="mc-stat-val" id="mc-champ-name" style="font-size:16px"></div>
+          <div class="mc-stat-sub" id="mc-champ-pct"></div>
+        </div>
+        <div class="mc-stat">
+          <div class="mc-stat-label">Simulations</div>
+          <div class="mc-stat-val" id="mc-n-sims"></div>
+          <div class="mc-stat-sub">brackets run</div>
+        </div>
+        <div class="mc-stat">
+          <div class="mc-stat-label">Avg Champ Seed</div>
+          <div class="mc-stat-val" id="mc-avg-seed"></div>
+          <div class="mc-stat-sub">across all sims</div>
+        </div>
+      </div>
+      <div class="mc-table-wrap">
+        <div class="mc-thead" id="mc-thead"></div>
+        <div id="mc-tbody"></div>
+      </div>
+      <div class="upset-section">
+        <div class="upset-title">Upset watch</div>
+        <div class="upset-cards" id="upset-cards"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ROUND_COLORS = ['#4da6ff','#34d399','#ffb340','#a78bfa','#f87171','#ff9500'];
+
+function getTeam(p) {
+  return {
+    name: document.getElementById(p+'-name').value || 'Team',
+    seed: +document.getElementById(p+'-seed').value || 1,
+    adjo: +document.getElementById(p+'-adjo').value || 110,
+    adjd: +document.getElementById(p+'-adjd').value || 100,
+    win_pct: +document.getElementById(p+'-win').value || 50,
+    sos: +document.getElementById(p+'-sos').value || 100,
+    form: +document.getElementById(p+'-form').value || 5,
+    record: '', conf: '',
+  };
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((b,i)=>
+    b.classList.toggle('active',['predict','simulate','mc'][i]===id));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+async function runPredict() {
+  const btn = document.getElementById('predict-btn');
+  btn.disabled = true; btn.textContent = 'Predicting...';
+  document.getElementById('predict-error').classList.remove('show');
+  try {
+    const res = await fetch('/api/predict', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({team_a: getTeam('a'), team_b: getTeam('b')})
+    });
+    const d = await res.json();
+    renderPredict(d);
+  } catch(e) {
+    showError('predict-error', 'Prediction failed. Is the server running?');
+  }
+  btn.disabled = false; btn.textContent = 'Run Prediction';
+}
+
+function renderPredict(d) {
+  const a = getTeam('a'), b = getTeam('b');
+  document.getElementById('result-box').classList.add('show');
+  document.getElementById('winner-line').innerHTML =
+    `<span class="name">${d.winner}</span> advances <span class="conf-pill ${d.confidence}">${d.confidence}</span>`;
+
+  document.getElementById('prob-name-a').textContent = a.name;
+  document.getElementById('prob-name-b').textContent = b.name;
+  document.getElementById('prob-bar-a').style.width = (d.prob_a*100)+'%';
+  document.getElementById('prob-bar-b').style.width = (d.prob_b*100)+'%';
+  document.getElementById('prob-pct-a').textContent = (d.prob_a*100).toFixed(1)+'%';
+  document.getElementById('prob-pct-b').textContent = (d.prob_b*100).toFixed(1)+'%';
+
+  const factors = [
+    {label:'AdjEM A', val: d.breakdown.adj_em_a.toFixed(1), adv: d.breakdown.adj_em_a > d.breakdown.adj_em_b ? 'adv-a':'adv-b', advTxt: d.breakdown.adj_em_a > d.breakdown.adj_em_b ? `+${a.name}`:`+${b.name}`},
+    {label:'AdjEM B', val: d.breakdown.adj_em_b.toFixed(1), adv:'adv-tie', advTxt:''},
+    {label:'Seed', val:`#${a.seed} vs #${b.seed}`, adv: a.seed < b.seed?'adv-a':'adv-b', advTxt: a.seed < b.seed?`+${a.name}`:`+${b.name}`},
+    {label:'Win %', val:`${a.win_pct}% vs ${b.win_pct}%`, adv: a.win_pct>b.win_pct?'adv-a':'adv-b', advTxt: a.win_pct>b.win_pct?`+${a.name}`:`+${b.name}`},
+    {label:'SOS Rank', val:`#${a.sos} vs #${b.sos}`, adv: a.sos<b.sos?'adv-a':'adv-b', advTxt: a.sos<b.sos?`+${a.name}`:`+${b.name}`},
+    {label:'Form', val:`${a.form}/10 vs ${b.form}/10`, adv: a.form>b.form?'adv-a':'adv-b', advTxt: a.form>b.form?`+${a.name}`:`+${b.name}`},
+  ];
+  document.getElementById('factors').innerHTML = factors.map(f=>`
+    <div class="factor-item">
+      <div class="fi-label">${f.label}</div>
+      <div class="fi-val">${f.val}</div>
+      ${f.advTxt?`<div class="fi-adv ${f.adv}">${f.advTxt}</div>`:''}
+    </div>`).join('');
+
+  const ub = document.getElementById('upset-banner');
+  if(d.upset_watch) {
+    ub.textContent = `⚠ Upset watch: #${b.seed > a.seed ? b.seed : a.seed} ${d.upset_team} has a ${(d.upset_prob*100).toFixed(0)}% chance`;
+    ub.classList.add('show');
+  } else { ub.classList.remove('show'); }
+}
+
+async function runSimulate() {
+  const btn = document.getElementById('sim-btn');
+  btn.disabled = true;
+  document.getElementById('sim-loading').classList.add('show');
+  document.getElementById('sim-results').style.display = 'none';
+  document.getElementById('sim-error').classList.remove('show');
+  try {
+    const noise = +document.getElementById('sim-noise').value;
+    const res = await fetch('/api/simulate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({noise})
+    });
+    const d = await res.json();
+    renderSimulate(d);
+  } catch(e) {
+    showError('sim-error','Simulation failed.');
+  }
+  document.getElementById('sim-loading').classList.remove('show');
+  btn.disabled = false;
+}
+
+function renderSimulate(d) {
+  document.getElementById('sim-champ').textContent = d.champion || '—';
+  const RNAMES = ['Round of 64','Round of 32','Sweet 16','Elite 8','Final Four','Championship'];
+
+  const tabsEl = document.getElementById('round-tabs');
+  const panelsEl = document.getElementById('round-panels');
+  tabsEl.innerHTML = ''; panelsEl.innerHTML = '';
+
+  d.rounds.forEach((games, ri) => {
+    const rname = RNAMES[ri] || `Round ${ri+1}`;
+    const tb = document.createElement('button');
+    tb.className = 'round-tab' + (ri===0?' active':'');
+    tb.textContent = rname;
+    tb.onclick = () => {
+      document.querySelectorAll('.round-tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.round-panel').forEach(p=>p.classList.remove('active'));
+      tb.classList.add('active');
+      document.getElementById('rp-'+ri).classList.add('active');
+    };
+    tabsEl.appendChild(tb);
+
+    const panel = document.createElement('div');
+    panel.className = 'round-panel' + (ri===0?' active':'');
+    panel.id = 'rp-'+ri;
+    panel.innerHTML = games.map(g=>`
+      <div class="game-row">
+        <div class="game-team ${g.winner===g.a?'winner':'loser'}">
+          <span class="team-nm">${g.a}</span>
+          <span class="team-pct">${(g.prob_a*100).toFixed(0)}%</span>
+        </div>
+        <div class="game-vs">vs</div>
+        <div class="game-team ${g.winner===g.b?'winner':'loser'}">
+          <span class="team-nm">${g.b}</span>
+          <span class="team-pct">${(g.prob_b*100).toFixed(0)}%</span>
+        </div>
+      </div>`).join('');
+    panelsEl.appendChild(panel);
+  });
+
+  document.getElementById('sim-results').style.display = 'block';
+}
+
+async function runMC() {
+  const btn = document.getElementById('mc-btn');
+  btn.disabled = true;
+  document.getElementById('mc-loading').classList.add('show');
+  document.getElementById('mc-results').style.display = 'none';
+  document.getElementById('mc-error').classList.remove('show');
+  try {
+    const n_sims = +document.getElementById('mc-sims').value;
+    const noise  = +document.getElementById('mc-noise').value;
+    const res = await fetch('/api/montecarlo', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({n_sims, noise})
+    });
+    const d = await res.json();
+    renderMC(d);
+  } catch(e) {
+    showError('mc-error','Monte Carlo failed.');
+  }
+  document.getElementById('mc-loading').classList.remove('show');
+  btn.disabled = false;
+}
+
+function renderMC(d) {
+  document.getElementById('mc-champ-name').textContent = d.champion || '—';
+  document.getElementById('mc-champ-pct').textContent = d.champion ? `${(d.champ_prob*100).toFixed(1)}% of simulations` : '';
+  document.getElementById('mc-n-sims').textContent = d.n_sims.toLocaleString();
+  document.getElementById('mc-avg-seed').textContent = d.avg_champ_seed.toFixed(2);
+
+  const cols = `28px 1fr ${d.round_names.map(()=>'90px').join(' ')}`;
+  document.getElementById('mc-thead').style.gridTemplateColumns = cols;
+  document.getElementById('mc-thead').innerHTML =
+    `<div></div><div>Team</div>` + d.round_names.map(r=>`<div>${r.replace('Round of ','R')}</div>`).join('');
+
+  document.getElementById('mc-tbody').innerHTML = d.teams.map((t,i)=>{
+    const isTop = i===0;
+    const cells = t.probs.map((p,ri)=>{
+      const cls = p>=0.5?'pct-high':p>=0.2?'pct-med':'pct-low';
+      return `<div class="mc-pct-cell">
+        <div class="mc-bar"><div class="mc-bar-fill" style="width:${Math.min(p*100,100)}%;background:${ROUND_COLORS[ri]}"></div></div>
+        <span class="pct-txt ${cls}">${(p*100).toFixed(1)}%</span>
+      </div>`;
+    }).join('');
+    return `<div class="mc-row ${isTop?'top-pick':''}" style="grid-template-columns:${cols}">
+      <div style="font-size:11px;color:var(--text3);font-family:'Barlow Condensed',sans-serif">#${t.seed}</div>
+      <div style="font-size:13px;font-weight:600">${t.name}</div>
+      ${cells}
+    </div>`;
+  }).join('');
+
+  document.getElementById('upset-cards').innerHTML = d.upset_watch.slice(0,6).map(u=>`
+    <div class="upset-card">
+      <div class="uc-name">#${u.seed} ${u.name}<span class="uc-badge">Upset Pick</span></div>
+      <div class="uc-meta">${u.round_name} · ${(u.prob*100).toFixed(1)}% in simulations</div>
+    </div>`).join('') || '<div style="color:var(--text3);font-size:13px">No major upsets detected.</div>';
+
+  document.getElementById('mc-results').style.display = 'block';
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('show');
+}
+
+// Auto-run MC on tab switch
+let mcRan = false;
+document.querySelector('[onclick="switchTab(\'mc\')"]').addEventListener('click',()=>{
+  if(!mcRan){mcRan=true; setTimeout(runMC,100);}
+});
+let simRan = false;
+document.querySelector('[onclick="switchTab(\'simulate\')"]').addEventListener('click',()=>{
+  if(!simRan){simRan=true; setTimeout(runSimulate,100);}
+});
+</script>
+</body>
+</html>
