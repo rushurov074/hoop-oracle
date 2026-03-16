@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bracket Brain — March Madness Predictor</title>
+<title>Hoop Oracle — March Madness Predictor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -314,7 +314,7 @@ body::before{
 <div class="wrap">
 
   <header class="site-header">
-    <div class="logo">BRACKET<span>BRAIN</span></div>
+    <div class="logo">HOOP<span>ORACLE</span></div>
     <div class="tagline">March Madness Predictor · Built by Ruslan Ushurov</div>
   </header>
 
@@ -860,7 +860,7 @@ function copyPicks() {
   const seedLookup = {};
   mc.teams.forEach(t => { seedLookup[t.name] = t.seed; });
   const RNAMES = ['R64','R32','S16','E8','F4','Champ'];
-  let text = '🏀 BRACKET BRAIN PICKS\n\n';
+  let text = '🏀 Hoop Oracle PICKS\n\n';
   sim.rounds.forEach((games, ri) => {
     text += `── ${RNAMES[ri]} ──\n`;
     games.forEach(g => {
