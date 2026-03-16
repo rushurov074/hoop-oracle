@@ -315,7 +315,7 @@ body::before{
 
   <header class="site-header">
     <div class="logo">HOOP<span>ORACLE</span></div>
-    <div class="tagline">March Madness Predictor · Built by Ruslan Ushurov</div>
+    <div class="tagline">March Madness Predictor · Made by Ruslan Ushurov</div>
   </header>
 
   <div class="tabs">
@@ -465,7 +465,7 @@ body::before{
     </div>
     <div class="picks-intro">
       Runs 25,000 simulations, then builds your bracket by picking the highest-probability winner each game.
-      Teams flagged as <span style="color:var(--purple);font-weight:600">upset picks</span> have a lower seed but ≥38% win chance. These are your differentiators in a bracket pool.
+      Teams flagged as <span style="color:var(--purple);font-weight:600">upset picks</span> have a lower seed but ≥38% win chance — these are your differentiators in a bracket pool.
     </div>
     <div class="loading-msg" id="picks-loading"><span class="spinner"></span>Running simulations and building bracket...</div>
     <div class="error-msg" id="picks-error"></div>
@@ -748,15 +748,19 @@ function renderPicks(sim, mc, probLookup) {
   document.getElementById('cp-name').textContent = champ || '—';
   document.getElementById('cp-prob').textContent = champProb ? `${(champProb*100).toFixed(1)}% championship probability` : '';
 
-  // Final Four — round index 4 (0-indexed)
-  const f4Round = sim.rounds[4] || [];
+  // Final Four — 4 regional winners come from Elite 8 round (rounds[3])
+  // Each E8 game produces one regional winner = one F4 team
   const e8Round = sim.rounds[3] || [];
-  document.getElementById('ff-grid').innerHTML = f4Round.map(g => {
-    const seed = seedLookup[g.winner] || '?';
-    const isUpsetPick = seed >= 5;
+  const f4Teams = e8Round.map(g => ({
+    name: g.winner,
+    seed: seedLookup[g.winner] || '?'
+  }));
+  const REGION_NAMES = ['East','West','South','Midwest'];
+  document.getElementById('ff-grid').innerHTML = f4Teams.map((t, i) => {
+    const isUpsetPick = t.seed >= 5;
     return `<div class="ff-team">
-      <div class="ff-region">#${seed} seed</div>
-      <div class="ff-name ${isUpsetPick?'upset':''}">${g.winner}</div>
+      <div class="ff-region">${REGION_NAMES[i] || 'Region '+(i+1)}</div>
+      <div class="ff-name ${isUpsetPick?'upset':''}">#${t.seed} ${t.name}</div>
     </div>`;
   }).join('') || '<div style="color:var(--text3)">Run simulation first</div>';
 
@@ -860,7 +864,7 @@ function copyPicks() {
   const seedLookup = {};
   mc.teams.forEach(t => { seedLookup[t.name] = t.seed; });
   const RNAMES = ['R64','R32','S16','E8','F4','Champ'];
-  let text = '🏀 Hoop Oracle PICKS\n\n';
+  let text = '🏀 HOOP ORACLE PICKS\n\n';
   sim.rounds.forEach((games, ri) => {
     text += `── ${RNAMES[ri]} ──\n`;
     games.forEach(g => {
