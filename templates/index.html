@@ -322,7 +322,7 @@ body::before{
     <button class="tab active" onclick="switchTab('predict')">Predict</button>
     <button class="tab" onclick="switchTab('simulate')">Simulate</button>
     <button class="tab" onclick="switchTab('mc')">Monte Carlo</button>
-    <button class="tab" onclick="switchTab('picks')">My Bracket</button>
+    <button class="tab" id="tab-picks" onclick="switchTab('picks')">My Bracket</button>
   </div>
 
   <!-- ── PREDICT ── -->
@@ -882,7 +882,7 @@ function copyPicks() {
 
 // Auto-run picks on tab switch
 let picksRan = false;
-document.querySelector('[onclick="switchTab('picks')"]').addEventListener('click',()=>{
+document.getElementById('tab-picks').addEventListener('click',()=>{
   if(!picksRan){picksRan=true; setTimeout(runPicks,100);}
 });
 
