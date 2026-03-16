@@ -58,10 +58,53 @@ def predict_game(a, b, weights=None):
 
 
 def sim_bracket_once(teams, weights=None, noise=0.0):
-    current = list(teams)
-    rounds = []
+    """
+    Simulate bracket respecting regional structure.
+    Teams must be in bracket order: 4 regions of 16, each in 1v16,8v9,5v12,4v13,6v11,3v14,7v10,2v15 order.
+    Regions stay separate until Final Four.
+    """
+    n = len(teams)
+    region_size = 16
+    n_regions = n // region_size
+
+    # Split into regions
+    regions = [list(teams[i*region_size:(i+1)*region_size]) for i in range(n_regions)]
+    all_rounds = []
+    round_idx = 0
+
+    # Play each region independently through Elite 8 (4 rounds for 16-team region)
+    region_winners = []
+    region_round_games = [[] for _ in range(4)]  # R64, R32, S16, E8
+
+    for reg in regions:
+        current = list(reg)
+        for ri in range(4):  # 4 rounds to get from 16 to 1
+            games = []
+            winners = []
+            for i in range(0, len(current), 2):
+                a = current[i]
+                b = current[i+1] if i+1 < len(current) else None
+                if not b:
+                    winners.append(a)
+                    continue
+                p = win_prob(a, b, weights, noise)
+                w = a if random.random() < p else b
+                games.append({"a": a["name"], "b": b["name"],
+                              "winner": w["name"], "prob_a": round(p,3), "prob_b": round(1-p,3)})
+                winners.append(w)
+            region_round_games[ri].extend(games)
+            current = winners
+        region_winners.append(current[0])
+
+    # Add regional rounds to all_rounds
+    for ri in range(4):
+        all_rounds.append(region_round_games[ri])
+
+    # Final Four: region 0 vs region 1, region 2 vs region 3
+    current = region_winners
     while len(current) > 1:
-        winners, games = [], []
+        games = []
+        winners = []
         for i in range(0, len(current), 2):
             a = current[i]
             b = current[i+1] if i+1 < len(current) else None
@@ -73,9 +116,10 @@ def sim_bracket_once(teams, weights=None, noise=0.0):
             games.append({"a": a["name"], "b": b["name"],
                           "winner": w["name"], "prob_a": round(p,3), "prob_b": round(1-p,3)})
             winners.append(w)
-        rounds.append(games)
+        all_rounds.append(games)
         current = winners
-    return rounds, current[0] if current else None
+
+    return all_rounds, current[0] if current else None
 
 
 def run_monte_carlo(teams, n_sims=5000, noise=0.08, weights=None):
@@ -84,9 +128,33 @@ def run_monte_carlo(teams, n_sims=5000, noise=0.08, weights=None):
     champ_counts = defaultdict(int)
     total_seed = 0
 
+    region_size = 16
+    n_regions = len(teams) // region_size
+
     for _ in range(n_sims):
-        current = list(teams)
-        ri = 0
+        regions = [list(teams[i*region_size:(i+1)*region_size]) for i in range(n_regions)]
+        region_winners = []
+        for reg in regions:
+            current = list(reg)
+            ri = 0
+            while len(current) > 1:
+                next_r = []
+                for i in range(0, len(current), 2):
+                    a = current[i]
+                    b = current[i+1] if i+1 < len(current) else None
+                    if not b:
+                        next_r.append(a)
+                        continue
+                    p = win_prob(a, b, weights, noise)
+                    w = a if random.random() < p else b
+                    counts[w["name"]][ri] += 1
+                    next_r.append(w)
+                current = next_r
+                ri += 1
+            region_winners.append(current[0])
+        # Final Four + Championship
+        current = region_winners
+        ri = 4
         while len(current) > 1:
             next_r = []
             for i in range(0, len(current), 2):
