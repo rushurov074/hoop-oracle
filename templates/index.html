@@ -700,7 +700,7 @@ async function runPicks() {
     // Run MC for probabilities
     const mcRes = await fetch('/api/montecarlo', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({n_sims: 5000, noise})
+      body: JSON.stringify({n_sims: 25000, noise})
     });
     const mc = await mcRes.json();
 
