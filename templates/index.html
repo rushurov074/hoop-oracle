@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bracket Brain, a March Madness Predictor</title>
+<title>Bracket Brain — March Madness Predictor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -243,6 +243,43 @@ body::before{
   background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)
 }
 
+
+/* ── MY BRACKET TAB ── */
+.picks-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.picks-intro{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;padding:14px 16px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--border)}
+.region-block{margin-bottom:28px}
+.region-title{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--orange);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,149,0,0.2)}
+.picks-round-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.picks-round-tab{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--display);letter-spacing:0.05em;text-transform:uppercase;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.picks-round-tab.active{background:var(--orange-dim);color:var(--orange);border-color:var(--border2)}
+.picks-round-panel{display:none}
+.picks-round-panel.active{display:block}
+.pick-row{display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.pick-team{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;transition:all 0.15s}
+.pick-team.pick-winner{border-color:var(--green);background:rgba(52,211,153,0.06)}
+.pick-team.pick-loser{opacity:0.38}
+.pick-team.pick-upset{border-color:var(--purple);background:rgba(167,139,250,0.07)}
+.pick-seed{font-family:var(--display);font-size:11px;font-weight:700;min-width:22px;text-align:center;padding:2px 5px;background:var(--bg2);border-radius:4px;color:var(--text2)}
+.pick-name{font-size:13px;font-weight:600;flex:1}
+.pick-prob{font-size:11px;font-family:'Barlow Condensed',sans-serif;color:var(--text3)}
+.pick-upset-tag{font-size:9px;font-weight:700;font-family:var(--display);letter-spacing:0.06em;text-transform:uppercase;padding:1px 6px;border-radius:8px;background:rgba(167,139,250,0.15);color:var(--purple);border:1px solid rgba(167,139,250,0.3);margin-left:4px}
+.pick-vs{text-align:center;font-size:10px;color:var(--text3);font-family:var(--display)}
+.final-four-box{background:linear-gradient(135deg,rgba(255,149,0,0.08),rgba(255,204,0,0.04));border:1px solid rgba(255,149,0,0.25);border-radius:12px;padding:20px;margin-bottom:20px}
+.ff-title{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
+.ff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ff-team{background:var(--bg2);border-radius:var(--r);padding:10px 14px;border:1px solid var(--border)}
+.ff-region{font-size:10px;color:var(--text3);font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px}
+.ff-name{font-size:15px;font-weight:700;font-family:var(--display)}
+.ff-name.upset{color:var(--purple)}
+.champ-pick-box{text-align:center;padding:24px;background:linear-gradient(135deg,rgba(255,149,0,0.1),rgba(255,204,0,0.06));border:1px solid rgba(255,149,0,0.3);border-radius:12px;margin-bottom:24px}
+.cp-label{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--text3);font-family:var(--display);font-weight:700}
+.cp-name{font-family:var(--display);font-size:48px;font-weight:800;color:var(--orange);letter-spacing:-0.5px;margin-top:4px}
+.cp-prob{font-size:13px;color:var(--text2);margin-top:4px}
+.upset-legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-bottom:16px}
+.ul-dot{width:10px;height:10px;border-radius:50%;background:var(--purple);flex-shrink:0}
+.copy-btn{padding:10px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);color:var(--text2);font-size:13px;font-family:var(--display);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;transition:all 0.15s}
+.copy-btn:hover{border-color:var(--border2);color:var(--orange)}
+
 /* Loading spinner */
 .spinner{
   display:inline-block;width:16px;height:16px;
@@ -278,13 +315,14 @@ body::before{
 
   <header class="site-header">
     <div class="logo">BRACKET<span>BRAIN</span></div>
-    <div class="tagline">March Madness Predictor · Made by Ruslan Ushurov</div>
+    <div class="tagline">March Madness Predictor · KenPom-Style Algorithm</div>
   </header>
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('predict')">Predict</button>
     <button class="tab" onclick="switchTab('simulate')">Simulate</button>
     <button class="tab" onclick="switchTab('mc')">Monte Carlo</button>
+    <button class="tab" onclick="switchTab('picks')">My Bracket</button>
   </div>
 
   <!-- ── PREDICT ── -->
@@ -408,6 +446,41 @@ body::before{
         <div class="upset-title">Upset watch</div>
         <div class="upset-cards" id="upset-cards"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── MY BRACKET ── -->
+  <div id="panel-picks" class="panel">
+    <div class="picks-header">
+      <button class="sim-btn" id="picks-btn" onclick="runPicks()">🏀 Generate My Bracket</button>
+      <div class="ctrl">
+        <span>Upset sensitivity</span>
+        <select id="picks-noise">
+          <option value="0.06">Conservative</option>
+          <option value="0.10" selected>Balanced</option>
+          <option value="0.18">Aggressive</option>
+        </select>
+      </div>
+      <button class="copy-btn" id="copy-btn" onclick="copyPicks()" style="display:none">Copy Picks</button>
+    </div>
+    <div class="picks-intro">
+      Runs 5,000 simulations, then builds your bracket by picking the highest-probability winner each game.
+      Teams flagged as <span style="color:var(--purple);font-weight:600">upset picks</span> have a lower seed but ≥38% win chance — these are your differentiators in a bracket pool.
+    </div>
+    <div class="loading-msg" id="picks-loading"><span class="spinner"></span>Running simulations and building bracket...</div>
+    <div class="error-msg" id="picks-error"></div>
+    <div id="picks-results" style="display:none">
+      <div class="champ-pick-box">
+        <div class="cp-label">🏆 Your Championship Pick</div>
+        <div class="cp-name" id="cp-name"></div>
+        <div class="cp-prob" id="cp-prob"></div>
+      </div>
+      <div class="final-four-box">
+        <div class="ff-title">Final Four</div>
+        <div class="ff-grid" id="ff-grid"></div>
+      </div>
+      <div class="upset-legend"><div class="ul-dot"></div>Purple border = upset pick (lower seed with ≥38% chance)</div>
+      <div id="picks-regions"></div>
     </div>
   </div>
 
@@ -608,6 +681,210 @@ function renderMC(d) {
 
   document.getElementById('mc-results').style.display = 'block';
 }
+
+
+// ── MY BRACKET ──────────────────────────────────────────────────────────────
+
+let picksData = null;
+
+async function runPicks() {
+  const btn = document.getElementById('picks-btn');
+  btn.disabled = true;
+  document.getElementById('picks-loading').classList.add('show');
+  document.getElementById('picks-results').style.display = 'none';
+  document.getElementById('picks-error').classList.remove('show');
+  document.getElementById('copy-btn').style.display = 'none';
+
+  try {
+    const noise = +document.getElementById('picks-noise').value;
+    // Run MC for probabilities
+    const mcRes = await fetch('/api/montecarlo', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({n_sims: 5000, noise})
+    });
+    const mc = await mcRes.json();
+
+    // Run deterministic bracket sim for the actual picks
+    const simRes = await fetch('/api/simulate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({noise: 0})
+    });
+    const sim = await simRes.json();
+
+    // Build prob lookup from MC
+    const probLookup = {};
+    mc.teams.forEach(t => { probLookup[t.name] = t.probs; });
+
+    picksData = {sim, mc, probLookup};
+    renderPicks(sim, mc, probLookup);
+    document.getElementById('copy-btn').style.display = 'block';
+  } catch(e) {
+    showError('picks-error', 'Failed to generate bracket.');
+  }
+  document.getElementById('picks-loading').classList.remove('show');
+  btn.disabled = false;
+}
+
+function isUpset(game, probLookup) {
+  // Check if winner is a lower seed with meaningful MC win probability
+  const winner = game.winner;
+  const loser = game.winner === game.a ? game.b : game.a;
+  // We need seed info — get from mc teams
+  return false; // base, overridden below with mc data
+}
+
+function renderPicks(sim, mc, probLookup) {
+  const RNAMES = ['Round of 64','Round of 32','Sweet 16','Elite 8','Final Four','Championship'];
+
+  // Build seed lookup from mc
+  const seedLookup = {};
+  mc.teams.forEach(t => { seedLookup[t.name] = t.seed; });
+
+  // Determine champion
+  const lastRound = sim.rounds[sim.rounds.length - 1];
+  const champ = sim.champion;
+  const champProb = probLookup[champ] ? probLookup[champ][probLookup[champ].length-1] : 0;
+
+  document.getElementById('cp-name').textContent = champ || '—';
+  document.getElementById('cp-prob').textContent = champProb ? `${(champProb*100).toFixed(1)}% championship probability` : '';
+
+  // Final Four — round index 4 (0-indexed)
+  const f4Round = sim.rounds[4] || [];
+  const e8Round = sim.rounds[3] || [];
+  document.getElementById('ff-grid').innerHTML = f4Round.map(g => {
+    const seed = seedLookup[g.winner] || '?';
+    const isUpsetPick = seed >= 5;
+    return `<div class="ff-team">
+      <div class="ff-region">#${seed} seed</div>
+      <div class="ff-name ${isUpsetPick?'upset':''}">${g.winner}</div>
+    </div>`;
+  }).join('') || '<div style="color:var(--text3)">Run simulation first</div>';
+
+  // Group rounds into 4 regions (16 teams each = 8 first-round games per region)
+  // Region names based on bracket structure
+  const REGIONS = ['East','West','South','Midwest'];
+  const regionsEl = document.getElementById('picks-regions');
+  regionsEl.innerHTML = '';
+
+  // Each region has 8 first-round games, so 4 regions total
+  // rounds[0] has all 32 games (if 64 teams), split into 4 groups of 8
+  const r0 = sim.rounds[0] || [];
+  const gamesPerRegion = Math.ceil(r0.length / 4);
+
+  REGIONS.forEach((region, ri) => {
+    const regionDiv = document.createElement('div');
+    regionDiv.className = 'region-block';
+    regionDiv.innerHTML = `<div class="region-title">${region}</div>`;
+
+    // Tabs for rounds within this region
+    const tabsDiv = document.createElement('div');
+    tabsDiv.className = 'picks-round-tabs';
+    const panelsDiv = document.createElement('div');
+
+    // How many rounds exist for this region
+    const numRounds = Math.min(sim.rounds.length - 2, 4); // exclude F4 and Champ from region view
+
+    for (let roundIdx = 0; roundIdx < numRounds; roundIdx++) {
+      const round = sim.rounds[roundIdx] || [];
+      // Slice games for this region
+      const divisor = Math.pow(2, roundIdx);
+      const regionGames = round.slice(
+        Math.floor(ri * round.length / 4),
+        Math.floor((ri+1) * round.length / 4)
+      );
+      if (!regionGames.length) continue;
+
+      const rname = RNAMES[roundIdx] || `Round ${roundIdx+1}`;
+      const tb = document.createElement('button');
+      tb.className = 'picks-round-tab' + (roundIdx===0?' active':'');
+      tb.textContent = rname;
+      const panelId = `pr-${ri}-${roundIdx}`;
+      tb.onclick = () => {
+        tabsDiv.querySelectorAll('.picks-round-tab').forEach(b=>b.classList.remove('active'));
+        panelsDiv.querySelectorAll('.picks-round-panel').forEach(p=>p.classList.remove('active'));
+        tb.classList.add('active');
+        document.getElementById(panelId).classList.add('active');
+      };
+      tabsDiv.appendChild(tb);
+
+      const panel = document.createElement('div');
+      panel.className = 'picks-round-panel' + (roundIdx===0?' active':'');
+      panel.id = panelId;
+
+      panel.innerHTML = regionGames.map(g => {
+        const winnerSeed = seedLookup[g.winner] || 1;
+        const loserName = g.winner === g.a ? g.b : g.a;
+        const loserSeed = seedLookup[loserName] || 1;
+        const isUpsetPick = winnerSeed > loserSeed;
+        const winnerMcProb = probLookup[g.winner] ? probLookup[g.winner][roundIdx] : 0;
+        const loserMcProb = probLookup[loserName] ? probLookup[loserName][roundIdx] : 0;
+
+        const teamA = g.a;
+        const teamB = g.b;
+        const seedA = seedLookup[teamA] || '?';
+        const seedB = seedLookup[teamB] || '?';
+        const aWins = g.winner === teamA;
+        const aUpset = aWins && seedA > seedB;
+        const bUpset = !aWins && seedB > seedA;
+        const aMcProb = probLookup[teamA] ? probLookup[teamA][roundIdx] : 0;
+        const bMcProb = probLookup[teamB] ? probLookup[teamB][roundIdx] : 0;
+
+        return `<div class="pick-row">
+          <div class="pick-team ${aWins?'pick-winner':'pick-loser'} ${aUpset?'pick-upset':''}">
+            <span class="pick-seed">${seedA}</span>
+            <span class="pick-name">${teamA}${aUpset?'<span class="pick-upset-tag">upset</span>':''}</span>
+            <span class="pick-prob">${(aMcProb*100).toFixed(0)}%</span>
+          </div>
+          <div class="pick-vs">vs</div>
+          <div class="pick-team ${!aWins?'pick-winner':'pick-loser'} ${bUpset?'pick-upset':''}">
+            <span class="pick-seed">${seedB}</span>
+            <span class="pick-name">${teamB}${bUpset?'<span class="pick-upset-tag">upset</span>':''}</span>
+            <span class="pick-prob">${(bMcProb*100).toFixed(0)}%</span>
+          </div>
+        </div>`;
+      }).join('');
+      panelsDiv.appendChild(panel);
+    }
+
+    regionDiv.appendChild(tabsDiv);
+    regionDiv.appendChild(panelsDiv);
+    regionsEl.appendChild(regionDiv);
+  });
+
+  document.getElementById('picks-results').style.display = 'block';
+}
+
+function copyPicks() {
+  if (!picksData) return;
+  const {sim, mc} = picksData;
+  const seedLookup = {};
+  mc.teams.forEach(t => { seedLookup[t.name] = t.seed; });
+  const RNAMES = ['R64','R32','S16','E8','F4','Champ'];
+  let text = '🏀 BRACKET BRAIN PICKS\n\n';
+  sim.rounds.forEach((games, ri) => {
+    text += `── ${RNAMES[ri]} ──\n`;
+    games.forEach(g => {
+      const ws = seedLookup[g.winner] || '?';
+      const ls = g.winner===g.a ? seedLookup[g.b]||'?' : seedLookup[g.a]||'?';
+      const loser = g.winner===g.a ? g.b : g.a;
+      const upset = ws > ls ? ' ⚠ UPSET' : '';
+      text += `  #${ws} ${g.winner} def. #${ls} ${loser}${upset}\n`;
+    });
+    text += '\n';
+  });
+  text += `🏆 CHAMPION: ${sim.champion}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Picks', 2000);
+  });
+}
+
+// Auto-run picks on tab switch
+let picksRan = false;
+document.querySelector('[onclick="switchTab('picks')"]').addEventListener('click',()=>{
+  if(!picksRan){picksRan=true; setTimeout(runPicks,100);}
+});
 
 function showError(id, msg) {
   const el = document.getElementById(id);
