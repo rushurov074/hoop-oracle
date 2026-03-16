@@ -115,26 +115,17 @@ def run_monte_carlo(teams, n_sims=5000, noise=0.08, weights=None):
     }
 
 
-# ── Sample bracket ─────────────────────────────────────────────────────────────
+# ── Bracket data — loads from teams.json if present ───────────────────────────
+from pathlib import Path
 
-SAMPLE_TEAMS = [
-    {"name":"Connecticut",   "seed":1,  "adjo":120.1,"adjd":93.2, "win_pct":88,"sos":25, "form":8,"record":"29-3", "conf":"Big East"},
-    {"name":"Stetson",       "seed":16, "adjo":102.4,"adjd":108.1,"win_pct":55,"sos":280,"form":5,"record":"23-10","conf":"ASUN"},
-    {"name":"Florida Atl.",  "seed":9,  "adjo":112.3,"adjd":99.8, "win_pct":72,"sos":110,"form":6,"record":"25-8", "conf":"AAC"},
-    {"name":"Northwestern",  "seed":8,  "adjo":110.5,"adjd":100.4,"win_pct":68,"sos":60, "form":5,"record":"22-10","conf":"Big Ten"},
-    {"name":"San Diego St",  "seed":5,  "adjo":114.1,"adjd":96.5, "win_pct":75,"sos":85, "form":7,"record":"26-7", "conf":"MWC"},
-    {"name":"UAB",           "seed":12, "adjo":108.0,"adjd":101.5,"win_pct":65,"sos":150,"form":8,"record":"22-9", "conf":"AAC"},
-    {"name":"Auburn",        "seed":4,  "adjo":116.2,"adjd":94.8, "win_pct":80,"sos":30, "form":6,"record":"26-7", "conf":"SEC"},
-    {"name":"Yale",          "seed":13, "adjo":106.5,"adjd":103.0,"win_pct":62,"sos":200,"form":7,"record":"22-7", "conf":"Ivy"},
-    {"name":"Purdue",        "seed":1,  "adjo":121.5,"adjd":91.8, "win_pct":90,"sos":18, "form":9,"record":"30-3", "conf":"Big Ten"},
-    {"name":"FDU",           "seed":16, "adjo":100.2,"adjd":109.3,"win_pct":52,"sos":300,"form":4,"record":"19-14","conf":"NEC"},
-    {"name":"Memphis",       "seed":8,  "adjo":111.8,"adjd":98.5, "win_pct":69,"sos":70, "form":6,"record":"22-10","conf":"AAC"},
-    {"name":"FAU",           "seed":9,  "adjo":112.8,"adjd":99.1, "win_pct":73,"sos":105,"form":7,"record":"25-8", "conf":"AAC"},
-    {"name":"Duke",          "seed":5,  "adjo":119.2,"adjd":96.1, "win_pct":82,"sos":38, "form":7,"record":"25-7", "conf":"ACC"},
-    {"name":"Oral Roberts",  "seed":12, "adjo":109.5,"adjd":102.1,"win_pct":67,"sos":165,"form":6,"record":"22-9", "conf":"Summit"},
-    {"name":"Tennessee",     "seed":4,  "adjo":116.8,"adjd":93.4, "win_pct":74,"sos":22, "form":6,"record":"25-8", "conf":"SEC"},
-    {"name":"Louisiana",     "seed":13, "adjo":107.1,"adjd":102.8,"win_pct":63,"sos":195,"form":5,"record":"22-9", "conf":"Sun Belt"},
-]
+def load_teams():
+    teams_file = Path(__file__).parent / "teams.json"
+    if teams_file.exists():
+        with open(teams_file) as f:
+            return json.load(f)
+    return []
+
+BRACKET_TEAMS = load_teams()
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -168,7 +159,7 @@ def api_predict():
 @app.route("/api/simulate", methods=["POST"])
 def api_simulate():
     data    = request.json
-    teams   = data.get("teams", SAMPLE_TEAMS)
+    teams   = data.get("teams", BRACKET_TEAMS)
     weights = data.get("weights")
     rounds, champion = sim_bracket_once(teams, weights)
     return jsonify({"rounds": rounds, "champion": champion["name"] if champion else None})
@@ -177,7 +168,7 @@ def api_simulate():
 @app.route("/api/montecarlo", methods=["POST"])
 def api_montecarlo():
     data    = request.json
-    teams   = data.get("teams", SAMPLE_TEAMS)
+    teams   = data.get("teams", BRACKET_TEAMS)
     n_sims  = min(int(data.get("n_sims", 5000)), 25000)
     noise   = float(data.get("noise", 0.08))
     weights = data.get("weights")
@@ -217,7 +208,7 @@ def api_montecarlo():
 
 @app.route("/api/teams/sample")
 def api_sample_teams():
-    return jsonify(SAMPLE_TEAMS)
+    return jsonify(BRACKET_TEAMS)
 
 
 if __name__ == "__main__":
